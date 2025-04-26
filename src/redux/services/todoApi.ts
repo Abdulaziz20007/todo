@@ -17,7 +17,7 @@ export interface UpdateTodoRequest {
 
 export const todoApi = createApi({
   reducerPath: "todoApi",
-  baseQuery: fetchBaseQuery({ baseUrl: "https://todo.ligma.uz/" }),
+  baseQuery: fetchBaseQuery({ baseUrl: "https://api.todo.ligma.uz/" }),
   tagTypes: ["Todo"],
   endpoints: (builder) => ({
     getTodos: builder.query<Todo[], void>({
