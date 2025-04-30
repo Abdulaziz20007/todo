@@ -1,20 +1,33 @@
 import { useState } from "react";
-import {
-  useCreateTodoMutation,
-  useGetTodosQuery,
-} from "../redux/services/todoApi";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Todo, todoService } from "../services/todoService";
 import TodoItem from "./TodoItem";
 
 export default function TodoList() {
   const [newTodo, setNewTodo] = useState("");
-  const { data: todos, isLoading, isError } = useGetTodosQuery();
-  const [createTodo] = useCreateTodoMutation();
+  const queryClient = useQueryClient();
+
+  const {
+    data: todos,
+    isLoading,
+    isError,
+  } = useQuery({
+    queryKey: ["todos"],
+    queryFn: todoService.getTodos,
+  });
+
+  const createTodoMutation = useMutation({
+    mutationFn: todoService.createTodo,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["todos"] });
+      setNewTodo("");
+    },
+  });
 
   const handleAddTodo = async (e: React.FormEvent) => {
     e.preventDefault();
     if (newTodo.trim()) {
-      await createTodo({ title: newTodo });
-      setNewTodo("");
+      await createTodoMutation.mutateAsync({ title: newTodo });
     }
   };
 

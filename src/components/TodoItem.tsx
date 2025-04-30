@@ -1,9 +1,6 @@
 import { useState } from "react";
-import {
-  Todo,
-  useDeleteTodoMutation,
-  useUpdateTodoMutation,
-} from "../redux/services/todoApi";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { Todo, todoService } from "../services/todoService";
 
 interface TodoItemProps {
   todo: Todo;
@@ -12,12 +9,33 @@ interface TodoItemProps {
 export default function TodoItem({ todo }: TodoItemProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [title, setTitle] = useState(todo.title);
+  const queryClient = useQueryClient();
 
-  const [updateTodo] = useUpdateTodoMutation();
-  const [deleteTodo] = useDeleteTodoMutation();
+  const updateTodoMutation = useMutation({
+    mutationFn: ({
+      id,
+      todo: updateData,
+    }: {
+      id: string;
+      todo: { title?: string; is_done?: boolean };
+    }) => todoService.updateTodo(id, updateData),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["todos"] });
+    },
+  });
+
+  const deleteTodoMutation = useMutation({
+    mutationFn: todoService.deleteTodo,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["todos"] });
+    },
+  });
 
   const handleToggleDone = () => {
-    updateTodo({ id: todo._id, todo: { is_done: !todo.is_done } });
+    updateTodoMutation.mutate({
+      id: todo._id,
+      todo: { is_done: !todo.is_done },
+    });
   };
 
   const handleEdit = () => {
@@ -25,12 +43,12 @@ export default function TodoItem({ todo }: TodoItemProps) {
   };
 
   const handleSave = () => {
-    updateTodo({ id: todo._id, todo: { title } });
+    updateTodoMutation.mutate({ id: todo._id, todo: { title } });
     setIsEditing(false);
   };
 
   const handleDelete = () => {
-    deleteTodo(todo._id);
+    deleteTodoMutation.mutate(todo._id);
   };
 
   return (
